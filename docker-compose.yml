@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17-alpine
+    ports:
+      # Bound to localhost only — dev DB should not be reachable from the network.
+      # Host port 5433: 5432 is taken by a system PostgreSQL install on some machines.
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: quiz_builder
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d quiz_builder"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_data:
