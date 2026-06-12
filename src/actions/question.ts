@@ -83,6 +83,7 @@ export async function addQuestion(
     revalidatePath("/dashboard");
     revalidatePath(`/quizzes/${quiz.id}/edit`);
     revalidatePath(`/q/${quiz.shareCode}`);
+    revalidatePath(`/api/public/quiz/${quiz.shareCode}`); // invalidate cached route handler
     return { ok: true, data: { id: created.id } };
   } catch (error) {
     console.error("[actions/question] addQuestion failed", error);
@@ -140,6 +141,7 @@ export async function updateQuestion(
     revalidatePath("/dashboard");
     revalidatePath(`/quizzes/${quiz.id}/edit`);
     revalidatePath(`/q/${quiz.shareCode}`);
+    revalidatePath(`/api/public/quiz/${quiz.shareCode}`); // invalidate cached route handler
     return { ok: true, data: { id: question.id } };
   } catch (error) {
     console.error("[actions/question] updateQuestion failed", error);
@@ -179,6 +181,7 @@ export async function deleteQuestion(
     revalidatePath("/dashboard");
     revalidatePath(`/quizzes/${quiz.id}/edit`);
     revalidatePath(`/q/${quiz.shareCode}`);
+    revalidatePath(`/api/public/quiz/${quiz.shareCode}`); // invalidate cached route handler
     return { ok: true, data: { id: question.id } };
   } catch (error) {
     console.error("[actions/question] deleteQuestion failed", error);
@@ -239,6 +242,7 @@ export async function reorderQuestions(
     revalidatePath("/dashboard");
     revalidatePath(`/quizzes/${quiz.id}/edit`);
     revalidatePath(`/q/${quiz.shareCode}`);
+    revalidatePath(`/api/public/quiz/${quiz.shareCode}`); // invalidate cached route handler
     return { ok: true, data: { id: quiz.id } };
   } catch (error) {
     console.error("[actions/question] reorderQuestions failed", error);

@@ -198,7 +198,7 @@ describe("addQuestion", () => {
     );
   });
 
-  it("happy path → ok true, id returned, revalidatePath ×3", async () => {
+  it("happy path → ok true, id returned, revalidatePath ×4", async () => {
     const result = await addQuestion("quiz-1", VALID_QUESTION_INPUT);
     expect(result).toEqual({ ok: true, data: { id: "q-new" } });
     const paths = mocks.revalidatePath.mock.calls.map((c) => c[0]);
@@ -206,6 +206,7 @@ describe("addQuestion", () => {
       "/dashboard",
       "/quizzes/quiz-1/edit",
       "/q/abc123XYZ0",
+      "/api/public/quiz/abc123XYZ0",
     ]);
   });
 
@@ -307,13 +308,14 @@ describe("updateQuestion", () => {
     });
   });
 
-  it("happy path → revalidatePath ×3", async () => {
+  it("happy path → revalidatePath ×4", async () => {
     await updateQuestion("q-1", { prompt: "New?" });
     const paths = mocks.revalidatePath.mock.calls.map((c) => c[0]);
     expect(paths).toEqual([
       "/dashboard",
       "/quizzes/quiz-1/edit",
       "/q/abc123XYZ0",
+      "/api/public/quiz/abc123XYZ0",
     ]);
   });
 
@@ -382,7 +384,7 @@ describe("deleteQuestion", () => {
     expect(mocks.delete).not.toHaveBeenCalled();
   });
 
-  it("happy path → ok true, id returned, revalidatePath ×3", async () => {
+  it("happy path → ok true, id returned, revalidatePath ×4", async () => {
     const result = await deleteQuestion("q-1");
     expect(result).toEqual({ ok: true, data: { id: "q-1" } });
     const paths = mocks.revalidatePath.mock.calls.map((c) => c[0]);
@@ -390,6 +392,7 @@ describe("deleteQuestion", () => {
       "/dashboard",
       "/quizzes/quiz-1/edit",
       "/q/abc123XYZ0",
+      "/api/public/quiz/abc123XYZ0",
     ]);
   });
 
@@ -552,6 +555,7 @@ describe("reorderQuestions", () => {
       "/dashboard",
       "/quizzes/quiz-1/edit",
       "/q/abc123XYZ0",
+      "/api/public/quiz/abc123XYZ0",
     ]);
   });
 

@@ -81,6 +81,7 @@ export async function updateQuiz(
     revalidatePath("/dashboard");
     revalidatePath(`/quizzes/${quiz.id}/edit`);
     revalidatePath(`/q/${quiz.shareCode}`); // content/publish affects public page (SPEC §9)
+    revalidatePath(`/api/public/quiz/${quiz.shareCode}`); // invalidate cached route handler
     return { ok: true, data: { id: quiz.id } };
   } catch (error) {
     console.error("[actions/quiz] updateQuiz failed", error);
@@ -117,6 +118,7 @@ export async function deleteQuiz(
 
     revalidatePath("/dashboard");
     revalidatePath(`/q/${quiz.shareCode}`);
+    revalidatePath(`/api/public/quiz/${quiz.shareCode}`); // invalidate cached route handler
     return { ok: true, data: { id: quiz.id } };
   } catch (error) {
     console.error("[actions/quiz] deleteQuiz failed", error);
