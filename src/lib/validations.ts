@@ -84,9 +84,24 @@ export const updateQuizSchema = quizSchema
 // cuid2 ids; presence check only — actions are network endpoints (SPEC §7)
 export const idSchema = z.string().min(1, "id is required");
 
+// Mirrors updateQuizSchema: partial patch, reject no-op ({}/all-undefined)
+export const updateQuestionSchema = questionSchema
+  .partial()
+  .refine((fields) => Object.values(fields).some((v) => v !== undefined), {
+    message: "At least one field must be provided",
+  });
+
+// Full new order for one quiz; set-equality vs DB checked in the action
+export const reorderQuestionsSchema = z.object({
+  quizId: idSchema,
+  questionIds: z.array(idSchema).min(1, "questionIds must not be empty"),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type QuizInput = z.infer<typeof quizSchema>;
 export type QuestionInput = z.infer<typeof questionSchema>;
 export type AttemptBodyInput = z.infer<typeof attemptBodySchema>;
 export type UpdateQuizInput = z.infer<typeof updateQuizSchema>;
+export type UpdateQuestionInput = z.infer<typeof updateQuestionSchema>;
+export type ReorderQuestionsInput = z.infer<typeof reorderQuestionsSchema>;
