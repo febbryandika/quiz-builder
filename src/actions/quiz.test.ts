@@ -206,6 +206,7 @@ describe("updateQuiz", () => {
       "/dashboard",
       "/quizzes/quiz-1/edit",
       "/q/abc123XYZ0",
+      "/api/public/quiz/abc123XYZ0",
     ]);
   });
 
@@ -215,6 +216,7 @@ describe("updateQuiz", () => {
     expect(mocks.updateSet).toHaveBeenCalledWith({ isPublished: true });
     const paths = mocks.revalidatePath.mock.calls.map((c) => c[0]);
     expect(paths).toContain("/q/abc123XYZ0");
+    expect(paths).toContain("/api/public/quiz/abc123XYZ0");
   });
 
   it("{timeLimit: null} reaches .set() (null clears, not dropped)", async () => {
@@ -275,11 +277,15 @@ describe("deleteQuiz", () => {
     });
   });
 
-  it("success → revalidates ['/dashboard', '/q/abc123XYZ0'], returns id", async () => {
+  it("success → revalidates ['/dashboard', '/q/abc123XYZ0', '/api/public/quiz/abc123XYZ0'], returns id", async () => {
     const result = await deleteQuiz("quiz-1");
     expect(result).toEqual({ ok: true, data: { id: "quiz-1" } });
     const paths = mocks.revalidatePath.mock.calls.map((c) => c[0]);
-    expect(paths).toEqual(["/dashboard", "/q/abc123XYZ0"]);
+    expect(paths).toEqual([
+      "/dashboard",
+      "/q/abc123XYZ0",
+      "/api/public/quiz/abc123XYZ0",
+    ]);
   });
 
   it("findFirst rejects → INTERNAL", async () => {
