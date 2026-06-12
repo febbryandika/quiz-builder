@@ -71,8 +71,22 @@ export const answersSchema = z.array(
   z.int().min(0, "Invalid answer index").max(3, "Invalid answer index"),
 );
 
+// Partial update incl. publish toggle (SPEC §3.1) — publish/unpublish goes
+// through updateQuiz; SPEC §5.2 defines no separate publish action.
+// Refine rejects no-op patches ({} or all-undefined): drizzle .set() throws on empty.
+export const updateQuizSchema = quizSchema
+  .extend({ isPublished: z.boolean() })
+  .partial()
+  .refine((fields) => Object.values(fields).some((v) => v !== undefined), {
+    message: "At least one field must be provided",
+  });
+
+// cuid2 ids; presence check only — actions are network endpoints (SPEC §7)
+export const idSchema = z.string().min(1, "id is required");
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type QuizInput = z.infer<typeof quizSchema>;
 export type QuestionInput = z.infer<typeof questionSchema>;
 export type AttemptBodyInput = z.infer<typeof attemptBodySchema>;
+export type UpdateQuizInput = z.infer<typeof updateQuizSchema>;
