@@ -72,3 +72,5 @@ export const attempts = pgTable(
   },
   (t) => [index("idx_attempt_quiz").on(t.quizId)],
 );
+
+export * from "./auth-schema";
