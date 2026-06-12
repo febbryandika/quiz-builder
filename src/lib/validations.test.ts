@@ -3,8 +3,10 @@ import {
   MAX_QUESTIONS_PER_QUIZ,
   answersSchema,
   attemptBodySchema,
+  idSchema,
   questionSchema,
   quizSchema,
+  updateQuizSchema,
 } from "@/lib/validations";
 
 const validQuiz = {
@@ -295,5 +297,66 @@ describe("answersSchema", () => {
 describe("MAX_QUESTIONS_PER_QUIZ", () => {
   it("equals 50", () => {
     expect(MAX_QUESTIONS_PER_QUIZ).toBe(50);
+  });
+});
+
+describe("updateQuizSchema", () => {
+  it("{} fails (refine: no fields)", () => {
+    expect(updateQuizSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("{title: undefined} fails (explicit-undefined trap)", () => {
+    expect(updateQuizSchema.safeParse({ title: undefined }).success).toBe(
+      false,
+    );
+  });
+
+  it("{unknownKey: 1} fails (stripped → empty)", () => {
+    expect(updateQuizSchema.safeParse({ unknownKey: 1 }).success).toBe(false);
+  });
+
+  it("{isPublished: true} alone passes", () => {
+    expect(updateQuizSchema.safeParse({ isPublished: true }).success).toBe(
+      true,
+    );
+  });
+
+  it('{title: "ab"} fails (inherited min-3 rule)', () => {
+    expect(updateQuizSchema.safeParse({ title: "ab" }).success).toBe(false);
+  });
+
+  it('"  New title  " trims', () => {
+    const result = updateQuizSchema.safeParse({ title: "  New title  " });
+    expect(result.success && result.data.title).toBe("New title");
+  });
+
+  it("{timeLimit: null} passes", () => {
+    expect(updateQuizSchema.safeParse({ timeLimit: null }).success).toBe(true);
+  });
+
+  it("{timeLimit: 0} fails", () => {
+    expect(updateQuizSchema.safeParse({ timeLimit: 0 }).success).toBe(false);
+  });
+
+  it("full payload passes", () => {
+    expect(
+      updateQuizSchema.safeParse({
+        title: "My quiz",
+        description: "d",
+        timeLimit: 300,
+        randomize: false,
+        isPublished: true,
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("idSchema", () => {
+  it('"" fails', () => {
+    expect(idSchema.safeParse("").success).toBe(false);
+  });
+
+  it('"abc" passes', () => {
+    expect(idSchema.safeParse("abc").success).toBe(true);
   });
 });
