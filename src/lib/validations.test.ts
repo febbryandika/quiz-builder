@@ -6,7 +6,9 @@ import {
   idSchema,
   questionSchema,
   quizSchema,
+  reorderQuestionsSchema,
   updateQuizSchema,
+  updateQuestionSchema,
 } from "@/lib/validations";
 
 const validQuiz = {
@@ -358,5 +360,98 @@ describe("idSchema", () => {
 
   it('"abc" passes', () => {
     expect(idSchema.safeParse("abc").success).toBe(true);
+  });
+});
+
+describe("updateQuestionSchema", () => {
+  it("{} fails (refine: no fields)", () => {
+    expect(updateQuestionSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("{prompt: undefined} fails (explicit-undefined trap)", () => {
+    expect(updateQuestionSchema.safeParse({ prompt: undefined }).success).toBe(
+      false,
+    );
+  });
+
+  it("{prompt: 'What?'} passes", () => {
+    expect(updateQuestionSchema.safeParse({ prompt: "What?" }).success).toBe(
+      true,
+    );
+  });
+
+  it('{prompt: ""} fails (inherited rule)', () => {
+    expect(updateQuestionSchema.safeParse({ prompt: "" }).success).toBe(false);
+  });
+
+  it("options count 3 fails (inherited rule)", () => {
+    expect(
+      updateQuestionSchema.safeParse({ options: ["a", "b", "c"] }).success,
+    ).toBe(false);
+  });
+
+  it("options count 4 passes (inherited rule)", () => {
+    expect(
+      updateQuestionSchema.safeParse({ options: ["a", "b", "c", "d"] }).success,
+    ).toBe(true);
+  });
+
+  it("correctIndex 4 fails (inherited rule)", () => {
+    expect(updateQuestionSchema.safeParse({ correctIndex: 4 }).success).toBe(
+      false,
+    );
+  });
+
+  it("multi-field patch passes", () => {
+    expect(
+      updateQuestionSchema.safeParse({
+        prompt: "What?",
+        correctIndex: 2,
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("reorderQuestionsSchema", () => {
+  it("valid payload passes", () => {
+    expect(
+      reorderQuestionsSchema.safeParse({
+        quizId: "quiz-1",
+        questionIds: ["q-1", "q-2"],
+      }).success,
+    ).toBe(true);
+  });
+
+  it('empty quizId "" fails', () => {
+    expect(
+      reorderQuestionsSchema.safeParse({
+        quizId: "",
+        questionIds: ["q-1"],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("questionIds: [] fails (min 1)", () => {
+    expect(
+      reorderQuestionsSchema.safeParse({
+        quizId: "quiz-1",
+        questionIds: [],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('questionIds: [""] fails (inner idSchema)', () => {
+    expect(
+      reorderQuestionsSchema.safeParse({
+        quizId: "quiz-1",
+        questionIds: [""],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("missing questionIds key fails", () => {
+    expect(reorderQuestionsSchema.safeParse({ quizId: "quiz-1" }).success).toBe(
+      false,
+    );
   });
 });
