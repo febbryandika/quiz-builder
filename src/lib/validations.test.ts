@@ -110,8 +110,13 @@ describe("questionSchema", () => {
   });
 
   it("explanation omitted passes", () => {
-    const { explanation: _e, ...rest } = validQuestion;
-    expect(questionSchema.safeParse(rest).success).toBe(true);
+    expect(
+      questionSchema.safeParse({
+        prompt: validQuestion.prompt,
+        options: validQuestion.options,
+        correctIndex: validQuestion.correctIndex,
+      }).success,
+    ).toBe(true);
   });
 
   it('prompt "" fails', () => {
