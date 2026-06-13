@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  computeMostMissed,
   toPublicQuiz,
   toQuizListItem,
   getUserQuizList,
@@ -91,6 +92,69 @@ describe("toQuizListItem", () => {
     expect(item.title).toBe("My Quiz");
     expect(item.shareCode).toBe("abc123XYZ0");
     expect(item.createdAt).toEqual(new Date("2024-01-01T00:00:00Z"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeMostMissed (pure)
+// ---------------------------------------------------------------------------
+describe("computeMostMissed", () => {
+  // Positional by sortOrder; correct answers are [0, 1, 2]
+  const QUESTIONS = [
+    { id: "q-1", prompt: "Q1", correctIndex: 0 },
+    { id: "q-2", prompt: "Q2", correctIndex: 1 },
+    { id: "q-3", prompt: "Q3", correctIndex: 2 },
+  ];
+
+  it("no attempts → every question missCount 0, missRate 0, all returned", () => {
+    const result = computeMostMissed(QUESTIONS, []);
+    expect(result).toHaveLength(3);
+    for (const q of result) {
+      expect(q.missCount).toBe(0);
+      expect(q.missRate).toBe(0);
+    }
+  });
+
+  it("all-correct attempts → missCount 0 for every question", () => {
+    const result = computeMostMissed(QUESTIONS, [
+      [0, 1, 2],
+      [0, 1, 2],
+    ]);
+    for (const q of result) {
+      expect(q.missCount).toBe(0);
+      expect(q.missRate).toBe(0);
+    }
+  });
+
+  it("mixed answers → correct missCount and missRate per question", () => {
+    const result = computeMostMissed(QUESTIONS, [
+      [0, 0, 0], // q1 correct, q2 wrong, q3 wrong
+      [0, 1, 0], // q1 correct, q2 correct, q3 wrong
+    ]);
+    const q = (id: string) => result.find((r) => r.questionId === id)!;
+    expect(q("q-1").missCount).toBe(0);
+    expect(q("q-1").missRate).toBe(0);
+    expect(q("q-2").missCount).toBe(1);
+    expect(q("q-2").missRate).toBe(0.5);
+    expect(q("q-3").missCount).toBe(2);
+    expect(q("q-3").missRate).toBe(1);
+  });
+
+  it("unanswered (-1) counts as a miss", () => {
+    const result = computeMostMissed(QUESTIONS, [[-1, 1, 2]]);
+    const q = (id: string) => result.find((r) => r.questionId === id)!;
+    expect(q("q-1").missCount).toBe(1);
+    expect(q("q-1").missRate).toBe(1);
+    expect(q("q-2").missCount).toBe(0);
+    expect(q("q-3").missCount).toBe(0);
+  });
+
+  it("ranks most-missed first (missRate descending)", () => {
+    const result = computeMostMissed(QUESTIONS, [
+      [0, 0, 0],
+      [0, 1, 0],
+    ]);
+    expect(result.map((r) => r.questionId)).toEqual(["q-3", "q-2", "q-1"]);
   });
 });
 
