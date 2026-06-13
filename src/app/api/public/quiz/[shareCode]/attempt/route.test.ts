@@ -5,6 +5,7 @@ import {
 } from "@/app/api/public/quiz/[shareCode]/attempt/route";
 
 vi.spyOn(console, "info").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => {});
 vi.spyOn(console, "error").mockImplementation(() => {});
 
 const mocks = vi.hoisted(() => ({
@@ -13,7 +14,9 @@ const mocks = vi.hoisted(() => ({
   insertValues: vi.fn(),
 }));
 
-vi.mock("@/lib/quiz", () => ({
+// Keep the real module (so scoreAttempt stays intact) and only stub the DB read.
+vi.mock("@/lib/quiz", async (orig) => ({
+  ...(await orig<typeof import("@/lib/quiz")>()),
   getPublishedQuiz: mocks.getPublishedQuiz,
 }));
 

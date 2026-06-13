@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeMostMissed,
+  scoreAttempt,
   toPublicQuiz,
   toQuizListItem,
   getUserQuizList,
@@ -223,6 +224,57 @@ describe("toPublicQuiz", () => {
     expect(pub.timeLimit).toBe(300);
     expect(pub.randomize).toBe(false);
     expect(pub.shareCode).toBe("abc123XYZ0");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// scoreAttempt (pure)
+// ---------------------------------------------------------------------------
+describe("scoreAttempt", () => {
+  // correctIndex [0,1,2]; explanation varies (incl. null) to verify passthrough
+  const QUESTIONS = [
+    { correctIndex: 0, explanation: "e0" },
+    { correctIndex: 1, explanation: null },
+    { correctIndex: 2, explanation: "e2" },
+  ];
+
+  it("all correct → score === total, every result flagged correct", () => {
+    const { score, results } = scoreAttempt(QUESTIONS, [0, 1, 2]);
+    expect(score).toBe(3);
+    expect(results).toEqual([
+      { correct: true, correctIndex: 0, explanation: "e0" },
+      { correct: true, correctIndex: 1, explanation: null },
+      { correct: true, correctIndex: 2, explanation: "e2" },
+    ]);
+  });
+
+  it("all wrong → score 0, every result flagged incorrect", () => {
+    const { score, results } = scoreAttempt(QUESTIONS, [1, 2, 0]);
+    expect(score).toBe(0);
+    expect(results.map((r) => r.correct)).toEqual([false, false, false]);
+  });
+
+  it("partial → correct score with per-question flags", () => {
+    const { score, results } = scoreAttempt(QUESTIONS, [0, 9, 2]);
+    expect(score).toBe(2);
+    expect(results.map((r) => r.correct)).toEqual([true, false, true]);
+  });
+
+  it("unanswered (-1) counts as wrong", () => {
+    const { score, results } = scoreAttempt(QUESTIONS, [-1, 1, 2]);
+    expect(score).toBe(2);
+    expect(results[0].correct).toBe(false);
+  });
+
+  it("reveals correctIndex/explanation per question (incl. null)", () => {
+    const { results } = scoreAttempt(QUESTIONS, [0, 0, 0]);
+    expect(results[1].correctIndex).toBe(1);
+    expect(results[1].explanation).toBeNull();
+    expect(results[2].explanation).toBe("e2");
+  });
+
+  it("empty quiz → score 0, no results", () => {
+    expect(scoreAttempt([], [])).toEqual({ score: 0, results: [] });
   });
 });
 
