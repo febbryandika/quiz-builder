@@ -14,6 +14,7 @@ export const quizKeys = {
   all: ["quizzes"] as const,
   list: () => ["quizzes", "list"] as const,
   detail: (id: string) => ["quizzes", id] as const,
+  analytics: (id: string) => ["quizzes", id, "analytics"] as const,
 };
 
 // Don't retry deterministic client errors (401/404): retrying only delays

@@ -70,6 +70,20 @@ export type AttemptResponse = {
   results: AttemptResult[];
 };
 
+// Creator analytics — most-missed questions (SPEC §3.3). The three scalar
+// metrics (attempts, avg score, completion) live on QuizListItem; this fills
+// the remaining per-question gap.
+export type MostMissedQuestion = {
+  questionId: string;
+  prompt: string;
+  missCount: number; // attempts that got it wrong (incl. unanswered)
+  missRate: number; // 0–1 fraction: missCount / attemptCount
+};
+
+export type QuizAnalytics = {
+  mostMissedQuestions: MostMissedQuestion[]; // ranked by missRate desc
+};
+
 // ---------------------------------------------------------------------------
 // Pure mappers
 // ---------------------------------------------------------------------------
@@ -107,6 +121,28 @@ export function toQuizListItem(row: {
     averageScore,
     completionRate,
   };
+}
+
+// Pure: rank questions by how often takers got them wrong. Questions are
+// positional by sortOrder; answersPerAttempt[*][i] is the selected index for
+// question i (-1 = unanswered). A miss = wrong OR unanswered (SPEC §3.2/§8).
+export function computeMostMissed(
+  questions: { id: string; prompt: string; correctIndex: number }[],
+  answersPerAttempt: number[][],
+): MostMissedQuestion[] {
+  return questions
+    .map((q, i) => {
+      const missCount = answersPerAttempt.reduce(
+        (n, answers) => (answers[i] === q.correctIndex ? n : n + 1),
+        0,
+      );
+      const missRate =
+        answersPerAttempt.length === 0
+          ? 0
+          : missCount / answersPerAttempt.length;
+      return { questionId: q.id, prompt: q.prompt, missCount, missRate };
+    })
+    .sort((a, b) => b.missRate - a.missRate);
 }
 
 // Explicit ALLOWLIST mapper — construct field by field; never spread/delete/omit
@@ -207,4 +243,35 @@ export async function getPublishedQuiz(
   });
   if (!quiz || !quiz.isPublished) return null;
   return loadQuizDetail(quiz);
+}
+
+// Returns creator analytics (most-missed questions) for a quiz; null = missing
+// OR non-owner (ownership check per SPEC §7, never disclosing which case fired)
+export async function getQuizAnalytics(
+  id: string,
+  userId: string,
+): Promise<QuizAnalytics | null> {
+  const quiz = await db.query.quizzes.findFirst({ where: eq(quizzes.id, id) });
+  if (!quiz || quiz.userId !== userId) return null;
+
+  const questionRows = await db
+    .select({
+      id: questions.id,
+      prompt: questions.prompt,
+      correctIndex: questions.correctIndex,
+    })
+    .from(questions)
+    .where(eq(questions.quizId, id))
+    .orderBy(asc(questions.sortOrder));
+
+  const attemptRows = await db
+    .select({ answersJson: attempts.answersJson })
+    .from(attempts)
+    .where(eq(attempts.quizId, id));
+
+  const answersPerAttempt = attemptRows.map(
+    (r) => JSON.parse(r.answersJson) as number[],
+  );
+
+  return { mostMissedQuestions: computeMostMissed(questionRows, answersPerAttempt) };
 }
