@@ -271,8 +271,12 @@ describe("answersSchema", () => {
     expect(answersSchema.safeParse([]).success).toBe(true);
   });
 
-  it("[-1] fails", () => {
-    expect(answersSchema.safeParse([-1]).success).toBe(false);
+  it("[-1] passes (-1 = unanswered)", () => {
+    expect(answersSchema.safeParse([-1]).success).toBe(true);
+  });
+
+  it("[-2] fails", () => {
+    expect(answersSchema.safeParse([-2]).success).toBe(false);
   });
 
   it("[4] fails", () => {
@@ -293,6 +297,10 @@ describe("answersSchema", () => {
 
   it("composition .length(2): [0,1] passes", () => {
     expect(answersSchema.length(2).safeParse([0, 1]).success).toBe(true);
+  });
+
+  it("composition .length(2): [-1,3] passes (unanswered allowed)", () => {
+    expect(answersSchema.length(2).safeParse([-1, 3]).success).toBe(true);
   });
 });
 

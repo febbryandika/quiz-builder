@@ -65,10 +65,14 @@ export const attemptBodySchema = z.object({
   answersJson: z.string("answersJson required"),
 });
 
+// -1 = unanswered (taker skipped / timer expired); never equals a 0–3
+// correctIndex, so it scores as wrong with no special-casing (SPEC §3.2, §8).
+export const UNANSWERED = -1;
+
 // Parsed answersJson; length-match vs question count composed at the route:
 //   answersSchema.length(quiz.questions.length)
 export const answersSchema = z.array(
-  z.int().min(0, "Invalid answer index").max(3, "Invalid answer index"),
+  z.int().min(-1, "Invalid answer index").max(3, "Invalid answer index"),
 );
 
 // Partial update incl. publish toggle (SPEC §3.1) — publish/unpublish goes

@@ -13,3 +13,11 @@ export function formatPercent(fraction: number | null): string {
   if (fraction === null) return "—";
   return `${Math.round(fraction * 100)}%`;
 }
+
+// formatTimer: converts a whole-second count to m:ss.
+// 0 → "0:00"; 5 → "0:05"; 65 → "1:05"; 600 → "10:00".
+export function formatTimer(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
