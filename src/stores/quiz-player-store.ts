@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { AttemptResponse, PublicQuiz } from "@/lib/quiz";
 import { UNANSWERED } from "@/lib/validations";
 
-type Status = "idle" | "submitting" | "submitted";
+type Status = "idle" | "submitting" | "submitted" | "failed";
 
 type QuizPlayerState = {
   quizId: string | null;
