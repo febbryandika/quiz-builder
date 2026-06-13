@@ -9,6 +9,14 @@ export const E2E_SHARE_CODE = "e2eplayer01";
 // auto-submit on timer expiry does NOT loop into repeated resubmissions.
 export const E2E_TIMED_SHARE_CODE = "e2etimed001";
 
+// Quiz owned by a different user, used by the ownership-protection E2E. Seeded
+// with a fixed id (quizzes.id has no FK requirement and overrides its
+// $defaultFn) so a signed-up user can navigate straight to its editor and be
+// blocked. The owner id needs no real user row (quizzes.userId has no FK).
+export const E2E_FOREIGN_USER_ID = "e2e-foreign-owner";
+export const E2E_FOREIGN_QUIZ_ID = "e2e-foreign-quiz-fixed-id";
+export const E2E_FOREIGN_SHARE_CODE = "e2eforeign1";
+
 export type E2EQuestion = {
   prompt: string;
   options: [string, string, string, string];

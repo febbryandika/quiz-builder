@@ -2,6 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { questions, quizzes } from "../src/db/schema";
 import {
+  E2E_FOREIGN_QUIZ_ID,
+  E2E_FOREIGN_SHARE_CODE,
+  E2E_FOREIGN_USER_ID,
   E2E_QUIZ,
   E2E_SHARE_CODE,
   E2E_TIMED_QUIZ,
@@ -48,9 +51,27 @@ async function seedQuiz(shareCode: string, quiz: SeedQuiz) {
   );
 }
 
-// Seed both published quizzes used by the player E2E. Re-runs stay clean even if
-// a previous teardown was skipped.
+// A quiz owned by a different user, for the ownership-protection E2E. Fixed id so
+// the test can target its editor directly; no questions needed (the editor 404s
+// for a non-owner before any question UI renders).
+async function seedForeignQuiz() {
+  await db.delete(quizzes).where(eq(quizzes.id, E2E_FOREIGN_QUIZ_ID));
+  await db.insert(quizzes).values({
+    id: E2E_FOREIGN_QUIZ_ID,
+    userId: E2E_FOREIGN_USER_ID,
+    title: "Foreign Owner Quiz",
+    description: "Owned by another user; used for the ownership E2E.",
+    randomize: false,
+    timeLimit: null,
+    isPublished: false,
+    shareCode: E2E_FOREIGN_SHARE_CODE,
+  });
+}
+
+// Seed the published player quizzes plus the foreign-owned quiz. Re-runs stay
+// clean even if a previous teardown was skipped.
 export default async function globalSetup() {
   await seedQuiz(E2E_SHARE_CODE, E2E_QUIZ);
   await seedQuiz(E2E_TIMED_SHARE_CODE, E2E_TIMED_QUIZ);
+  await seedForeignQuiz();
 }

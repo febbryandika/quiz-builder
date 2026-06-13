@@ -145,6 +145,22 @@ export function computeMostMissed(
     .sort((a, b) => b.missRate - a.missRate);
 }
 
+// Pure: score a submitted attempt positionally. questions are in sortOrder;
+// selected[i] is the chosen index for question i (-1 = unanswered → wrong).
+// Returns { score, results } in original question order (SPEC §5.3/§10).
+export function scoreAttempt(
+  questions: { correctIndex: number; explanation: string | null }[],
+  selected: number[],
+): { score: number; results: AttemptResult[] } {
+  let score = 0;
+  const results = questions.map((q, i) => {
+    const correct = selected[i] === q.correctIndex;
+    if (correct) score++;
+    return { correct, correctIndex: q.correctIndex, explanation: q.explanation };
+  });
+  return { score, results };
+}
+
 // Explicit ALLOWLIST mapper — construct field by field; never spread/delete/omit
 export function toPublicQuiz(quiz: QuizDetail): PublicQuiz {
   return {

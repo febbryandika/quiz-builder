@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { attempts } from "@/db/schema";
-import { getPublishedQuiz } from "@/lib/quiz";
+import { getPublishedQuiz, scoreAttempt } from "@/lib/quiz";
 import type { AttemptResponse } from "@/lib/quiz";
 import { errorResponse } from "@/lib/api";
 import { attemptBodySchema, answersSchema } from "@/lib/validations";
@@ -22,18 +22,34 @@ export async function POST(
     const body: unknown = await req.json().catch(() => undefined);
     const parsed = attemptBodySchema.safeParse(body);
     if (!parsed.success) {
+      console.warn("[api/public/quiz/[shareCode]/attempt] POST rejected", {
+        shareCode,
+        reason: "INVALID_BODY",
+      });
       return errorResponse("INVALID_BODY", "answersJson required", 400);
     }
 
     // 404 before validating answers so we never leak shape info for a quiz
     // that doesn't exist (or isn't published).
     const quiz = await getPublishedQuiz(shareCode);
-    if (!quiz) return errorResponse("NOT_FOUND", "Quiz not found", 404);
+    if (!quiz) {
+      console.warn("[api/public/quiz/[shareCode]/attempt] POST rejected", {
+        shareCode,
+        reason: "NOT_FOUND",
+      });
+      return errorResponse("NOT_FOUND", "Quiz not found", 404);
+    }
 
     let answers: unknown;
     try {
       answers = JSON.parse(parsed.data.answersJson);
     } catch {
+      console.warn("[api/public/quiz/[shareCode]/attempt] POST rejected", {
+        shareCode,
+        quizId: quiz.id,
+        reason: "INVALID_BODY",
+        detail: "answersJson not JSON",
+      });
       return errorResponse(
         "INVALID_BODY",
         "answersJson must be a JSON array",
@@ -46,22 +62,18 @@ export async function POST(
       .length(quiz.questions.length)
       .safeParse(answers);
     if (!answersParsed.success) {
+      console.warn("[api/public/quiz/[shareCode]/attempt] POST rejected", {
+        shareCode,
+        quizId: quiz.id,
+        reason: "INVALID_ANSWERS",
+      });
       return errorResponse("INVALID_ANSWERS", "Invalid answers", 400);
     }
     const selected = answersParsed.data;
 
     // Score positionally — quiz.questions is ordered by sortOrder asc, matching
     // the order the client submits answers in.
-    let score = 0;
-    const results = quiz.questions.map((q, i) => {
-      const correct = selected[i] === q.correctIndex;
-      if (correct) score++;
-      return {
-        correct,
-        correctIndex: q.correctIndex,
-        explanation: q.explanation,
-      };
-    });
+    const { score, results } = scoreAttempt(quiz.questions, selected);
 
     await db.insert(attempts).values({
       quizId: quiz.id,
