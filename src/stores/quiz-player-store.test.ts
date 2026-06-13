@@ -137,3 +137,13 @@ describe("setResults", () => {
     expect(s.status).toBe("submitted");
   });
 });
+
+describe("setStatus failed", () => {
+  it("marks a failed submission and init clears it back to idle (retry/retake)", () => {
+    store().init(makeQuiz(false, 2));
+    store().setStatus("failed");
+    expect(store().status).toBe("failed");
+    store().init(makeQuiz(false, 2));
+    expect(store().status).toBe("idle");
+  });
+});

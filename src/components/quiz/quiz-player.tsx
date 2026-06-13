@@ -9,7 +9,7 @@ import { formatTimer } from "@/lib/quiz-ui";
 
 export function QuizPlayer({ quiz }: { quiz: PublicQuiz }) {
   const router = useRouter();
-  const { mutate: submitMutate, isError: submitFailed } = useSubmitAttempt();
+  const { mutate: submitMutate } = useSubmitAttempt();
 
   const initialized = useQuizPlayerStore((s) => s.quizId === quiz.id);
   const order = useQuizPlayerStore((s) => s.order);
@@ -29,7 +29,9 @@ export function QuizPlayer({ quiz }: { quiz: PublicQuiz }) {
   // Reads live state via getState() so the callback stays referentially stable.
   const submit = useCallback(() => {
     const store = useQuizPlayerStore.getState();
-    if (store.status !== "idle") return;
+    // Allow an initial submit ("idle") or a manual retry ("failed"); block only
+    // while a request is in flight or already submitted.
+    if (store.status === "submitting" || store.status === "submitted") return;
     store.setStatus("submitting");
     submitMutate(
       { shareCode: quiz.shareCode, answersJson: store.buildAnswersJson() },
@@ -39,7 +41,9 @@ export function QuizPlayer({ quiz }: { quiz: PublicQuiz }) {
           router.push(`/q/${quiz.shareCode}/done`);
         },
         onError: () => {
-          useQuizPlayerStore.getState().setStatus("idle");
+          // "failed" (not "idle") so the timer's auto-submit effect can't
+          // re-fire when remaining === 0 — that would loop on repeated failure.
+          useQuizPlayerStore.getState().setStatus("failed");
         },
       },
     );
@@ -136,7 +140,7 @@ export function QuizPlayer({ quiz }: { quiz: PublicQuiz }) {
         </div>
       </fieldset>
 
-      {submitFailed && (
+      {status === "failed" && (
         <p role="alert" className="text-sm text-red-600">
           Couldn’t submit your answers. Please try again.
         </p>
@@ -151,14 +155,31 @@ export function QuizPlayer({ quiz }: { quiz: PublicQuiz }) {
         >
           Back
         </button>
-        {isLast ? (
+        {status === "submitting" ? (
+          <button
+            type="button"
+            disabled
+            className="rounded bg-black px-4 py-2 text-white disabled:opacity-50 dark:bg-white dark:text-black"
+          >
+            Submitting…
+          </button>
+        ) : status === "failed" ? (
+          // Explicit retry CTA. Shown regardless of position, since a timer
+          // expiry can auto-submit (and fail) mid-quiz. Answers are preserved.
           <button
             type="button"
             onClick={submit}
-            disabled={status !== "idle"}
-            className="rounded bg-black px-4 py-2 text-white disabled:opacity-50 dark:bg-white dark:text-black"
+            className="rounded bg-black px-4 py-2 text-white dark:bg-white dark:text-black"
           >
-            {status === "idle" ? "Submit" : "Submitting…"}
+            Retry
+          </button>
+        ) : isLast ? (
+          <button
+            type="button"
+            onClick={submit}
+            className="rounded bg-black px-4 py-2 text-white dark:bg-white dark:text-black"
+          >
+            Submit
           </button>
         ) : (
           <button
