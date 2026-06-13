@@ -55,6 +55,21 @@ export type PublicQuiz = {
   }[];
 };
 
+// Attempt scoring response (SPEC §5.3) — correctIndex/explanation are revealed
+// here for the first time, only after submission. Results are in original
+// (sortOrder) question order.
+export type AttemptResult = {
+  correct: boolean;
+  correctIndex: number;
+  explanation: string | null;
+};
+
+export type AttemptResponse = {
+  score: number;
+  total: number;
+  results: AttemptResult[];
+};
+
 // ---------------------------------------------------------------------------
 // Pure mappers
 // ---------------------------------------------------------------------------
